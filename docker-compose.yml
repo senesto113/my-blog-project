@@ -1,0 +1,62 @@
+version: "3.9"
+
+services:
+  # Laravel Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: laravel_backend
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: blogdb
+      DB_USERNAME: postgres
+      DB_PASSWORD: mysecretpassword
+    depends_on:
+      - db
+    networks:
+      - app-network
+    ports:
+    - "8000:8000"
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: laravel_db
+    environment:
+      POSTGRES_DB: blogdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Next.js Frontend
+  frontend:
+    image: node:20
+    container_name: next_frontend
+    working_dir: /usr/src/app
+    volumes:
+      - ./frontend:/usr/src/app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
+    driver: bridge
